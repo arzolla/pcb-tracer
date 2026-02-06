@@ -78,7 +78,7 @@ MainWindow::MainWindow(QWidget* parent)
     fileMenu->addAction(newAction);
 
     QAction* loadAction = new QAction("Load", this);
-    connect(loadAction, &QAction::triggered, this, &MainWindow::handleLoadProject);
+    connect(loadAction, &QAction::triggered, this, &MainWindow::LoadProject);
     fileMenu->addAction(loadAction);
 
     QAction* saveAction = new QAction("Save", this);
@@ -219,15 +219,18 @@ void MainWindow::saveProject()
 void MainWindow::saveProjectAs()
 {
     QString fileFilter = "PCB JSON Files (*.jpcb);;PCB Binary Files (*.pcb);;PCB Files (*.pcb *.jpcb)";
-    QString filePath = QFileDialog::getSaveFileName(this, "Save PCB work", "", fileFilter);
+    
+    // Get last directory from Config
+    QString lastDirectory = Config::instance()->getConfigValue(ConfigKeys::LAST_DIRECTORY);
+    
+    QString filePath = QFileDialog::getSaveFileName(this, "Save PCB work", lastDirectory, fileFilter);
     if (!filePath.isEmpty()) {
         QString oldFilePath = m_currentFilePath;
         saveToFile(filePath);
-        if(oldFilePath.isEmpty()) {
-            // is we're not coming from a named file, rename the current generic autosave file
-            QString oldAutosavePath = getAutosaveFilePath(oldFilePath);
-            renameToAutosaveFile(oldAutosavePath);    
-        }
+        
+        // Save the selected file's directory to Config
+        QFileInfo fileInfo(filePath);
+        Config::instance()->setConfigValue(ConfigKeys::LAST_DIRECTORY, fileInfo.dir().absolutePath());
     }
 }
 
@@ -258,9 +261,22 @@ void MainWindow::saveToFile(const QString& filePath, bool isAutoSave)
     }
 }
 
-void MainWindow::handleLoadProject() {
+void MainWindow::LoadProject()
+{
     if (promptForUnsavedChanges()) {
-        loadProject();
+        QString fileFilter = "PCB Files (*.pcb *.jpcb);;PCB JSON Files (*.jpcb);;PCB Binary Files (*.pcb)";
+        
+        // Get last directory from Config 
+        QString lastDirectory = Config::instance()->getConfigValue(ConfigKeys::LAST_DIRECTORY);
+        
+        QString filePath = QFileDialog::getOpenFileName(this, "Open PCB work", lastDirectory, fileFilter);
+        if (!filePath.isEmpty()) {
+            loadProjectFromFile(filePath);
+            
+            // Save the selected file's directory to Config
+            QFileInfo fileInfo(filePath);
+            Config::instance()->setConfigValue(ConfigKeys::LAST_DIRECTORY, fileInfo.dir().absolutePath());
+        }
     }
 }
 
@@ -279,19 +295,6 @@ bool MainWindow::checkAndLoadAutosave(QString originalFilePath) {
         }
     }
     return false; // indicate that no autosave was loaded
-}
-
-void MainWindow::loadProject() {
-    QString fileFilter = "PCB JSON Files (*.jpcb);;PCB Binary Files (*.pcb);;PCB Files (*.pcb *.jpcb)";
-    QString filePath = QFileDialog::getOpenFileName(this, "Load PCB work", "", fileFilter);
-    if (filePath.isEmpty()) {
-        return; // early return if no file is selected
-    }
-
-    if (!checkAndLoadAutosave(filePath)) {
-        // load the original file if no autosave is loaded
-        loadProjectFromFile(filePath);
-    }
 }
 
 void MainWindow::loadProjectFromFile(const QString& filePath, bool isAutoLoad) {

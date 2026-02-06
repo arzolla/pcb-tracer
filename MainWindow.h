@@ -32,8 +32,7 @@ private slots:
     void exit();
     void saveProject();
     void saveProjectAs();
-    void handleLoadProject();
-    void loadProject();
+    void LoadProject();
     void setFrontSideImage();
     void setBackSideImage();
     void viewConnections();

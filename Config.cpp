@@ -4,8 +4,12 @@
 #include "Editor.h"
 #include "Component.h"
 #include <QDebug>
+#include <QApplication>
+#include <QFile>
+#include <QTextStream>
 
 Config* Config::m_instance = nullptr;
+const QString Config::CONFIG_FILE_NAME = "config.cfg";
 
 Config* Config::instance() {
     if (!m_instance) {
@@ -88,4 +92,83 @@ QVariantMap Config::toDict() const {
     result["link_width"] = m_linkWidth;
     result["pad_size"] = m_padSize;
     return result;
+}
+
+QString Config::getConfigFilePath() const {
+    return QApplication::applicationDirPath() + "/" + CONFIG_FILE_NAME;
+}
+
+QStringList Config::readConfigFile() const {
+    QStringList lines;
+    QFile file(getConfigFilePath());
+    
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream in(&file);
+        while (!in.atEnd()) {
+            QString line = in.readLine();
+            if (!line.isEmpty()) {
+                lines.append(line);
+            }
+        }
+        file.close();
+        qDebug() << "Config: Read" << lines.size() << "entries from" << getConfigFilePath();
+    } else {
+        qDebug() << "Config: Could not open file for reading:" << getConfigFilePath();
+    }
+    
+    return lines;
+}
+
+void Config::writeConfigFile(const QStringList& lines) const {
+    QFile file(getConfigFilePath());
+    
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QTextStream out(&file);
+        for (const QString& line : lines) {
+            out << line << "\n";
+        }
+        file.close();
+        qDebug() << "Config: Wrote" << lines.size() << "entries to" << getConfigFilePath();
+    } else {
+        qDebug() << "Config: Failed to write config to:" << getConfigFilePath();
+    }
+}
+
+QString Config::getConfigValue(const QString& key, const QString& defaultValue) const {
+    QString searchKey = key + "=";
+    QStringList lines = readConfigFile();
+    
+    for (const QString& line : lines) {
+        if (line.startsWith(searchKey)) {
+            QString value = line.mid(searchKey.length());
+            qDebug() << "Config: Read" << key << "=" << value;
+            return value;
+        }
+    }
+    
+    qDebug() << "Config: Key not found, using default for" << key;
+    return defaultValue;
+}
+
+void Config::setConfigValue(const QString& key, const QString& value) {
+    QString searchKey = key + "=";
+    QStringList lines = readConfigFile();
+    bool keyFound = false;
+    
+    // Update existing key or mark as not found
+    for (int i = 0; i < lines.size(); ++i) {
+        if (lines[i].startsWith(searchKey)) {
+            lines[i] = searchKey + value;
+            keyFound = true;
+            break;
+        }
+    }
+    
+    // Append key if not found
+    if (!keyFound) {
+        lines.append(searchKey + value);
+    }
+    
+    qDebug() << "Config: Setting" << key << "=" << value << (keyFound ? "(updated)" : "(new)");
+    writeConfigFile(lines);
 }

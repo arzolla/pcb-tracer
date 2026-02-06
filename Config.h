@@ -9,9 +9,16 @@
 class Editor;
 class Link;
 
+// Configuration keys
+namespace ConfigKeys {
+    constexpr const char* LAST_DIRECTORY = "lastDirectory";
+}
+
 class Config {
 public:
     static Config* instance();
+    
+    // Color and appearance settings
     QString color(LinkSide side) const;
     QString color(Color color) const;
     void apply();
@@ -19,6 +26,10 @@ public:
     void update(const QVariantMap& kwargs);
     QVariantMap toDict() const;
     void readConfigFromBinary(QDataStream& in);
+    
+    // Persistent configuration management
+    QString getConfigValue(const QString& key, const QString& defaultValue = "") const;
+    void setConfigValue(const QString& key, const QString& value);
     
     int m_linkWidth;
     int m_padSize;
@@ -29,8 +40,14 @@ private:
     Config& operator=(const Config&) = delete;
 
     static Config* m_instance;
+    static const QString CONFIG_FILE_NAME;
 
     QMap<Color, QString> m_colors;
+    
+    // Helper methods
+    QString getConfigFilePath() const;
+    QStringList readConfigFile() const;
+    void writeConfigFile(const QStringList& lines) const;
 
 };
 
