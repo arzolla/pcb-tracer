@@ -27,7 +27,7 @@ bool ComponentDrawingTool::onMousePress(QMouseEvent* event)
     {
         if (event->modifiers() & Qt::ShiftModifier)
         {
-            if (!m_points.isEmpty() && m_points.last().type() == QVariant::PointF)            
+            if (!m_points.isEmpty() && m_points.last().typeId() == QVariant::PointF)            
             {
                 QPointF lastPoint = m_points.takeLast().toPointF();
                 QVector<QPointF> pointPair = {lastPoint, mousePos};
