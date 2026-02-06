@@ -32,6 +32,74 @@ Config::Config() {
     // Initialize other default settings
     m_linkWidth = 6;
     m_padSize = 12;
+    
+    // Load settings from config file
+    loadSettingsFromConfig();
+}
+
+void Config::loadSettingsFromConfig() {
+    qDebug() << "Config: Loading settings from" << getConfigFilePath();
+    
+    // Load colors - check if present, else use defaults and save
+    QString colorFront = getConfigValue(ConfigKeys::COLOR_FRONT);
+    if (colorFront.isEmpty()) {
+        setConfigValue(ConfigKeys::COLOR_FRONT, m_colors[Color::FRONT]);
+    } else {
+        m_colors[Color::FRONT] = colorFront;
+    }
+    
+    QString colorBack = getConfigValue(ConfigKeys::COLOR_BACK);
+    if (colorBack.isEmpty()) {
+        setConfigValue(ConfigKeys::COLOR_BACK, m_colors[Color::BACK]);
+    } else {
+        m_colors[Color::BACK] = colorBack;
+    }
+    
+    QString colorWip = getConfigValue(ConfigKeys::COLOR_WIP);
+    if (colorWip.isEmpty()) {
+        setConfigValue(ConfigKeys::COLOR_WIP, m_colors[Color::WIP]);
+    } else {
+        m_colors[Color::WIP] = colorWip;
+    }
+    
+    QString colorNotes = getConfigValue(ConfigKeys::COLOR_NOTES);
+    if (colorNotes.isEmpty()) {
+        setConfigValue(ConfigKeys::COLOR_NOTES, m_colors[Color::NOTES]);
+    } else {
+        m_colors[Color::NOTES] = colorNotes;
+    }
+    
+    QString colorHighlighted = getConfigValue(ConfigKeys::COLOR_HIGHLIGHTED);
+    if (colorHighlighted.isEmpty()) {
+        setConfigValue(ConfigKeys::COLOR_HIGHLIGHTED, m_colors[Color::HIGHLIGHTED]);
+    } else {
+        m_colors[Color::HIGHLIGHTED] = colorHighlighted;
+    }
+    
+    QString colorNode = getConfigValue(ConfigKeys::COLOR_NODE);
+    if (colorNode.isEmpty()) {
+        setConfigValue(ConfigKeys::COLOR_NODE, m_colors[Color::NODE]);
+    } else {
+        m_colors[Color::NODE] = colorNode;
+    }
+    
+    // Load link width - check if present, else use default and save
+    QString linkWidthStr = getConfigValue(ConfigKeys::LINK_WIDTH);
+    if (linkWidthStr.isEmpty()) {
+        setConfigValue(ConfigKeys::LINK_WIDTH, QString::number(m_linkWidth));
+    } else {
+        m_linkWidth = linkWidthStr.toInt();
+    }
+    
+    // Load pad size - check if present, else use default and save
+    QString padSizeStr = getConfigValue(ConfigKeys::PAD_SIZE);
+    if (padSizeStr.isEmpty()) {
+        setConfigValue(ConfigKeys::PAD_SIZE, QString::number(m_padSize));
+    } else {
+        m_padSize = padSizeStr.toInt();
+    }
+    
+    qDebug() << "Config: Settings loaded successfully";
 }
 
 void Config::apply() {
@@ -61,6 +129,18 @@ void Config::updateFromConfigDialog(const QVariantMap& dialogConfig) {
     // Update other settings
     m_linkWidth = dialogConfig["link_width"].toInt();
     m_padSize = dialogConfig["pad_size"].toInt();
+    
+    // Save colors to config file
+    setConfigValue(ConfigKeys::COLOR_FRONT, m_colors[Color::FRONT]);
+    setConfigValue(ConfigKeys::COLOR_BACK, m_colors[Color::BACK]);
+    setConfigValue(ConfigKeys::COLOR_WIP, m_colors[Color::WIP]);
+    setConfigValue(ConfigKeys::COLOR_NOTES, m_colors[Color::NOTES]);
+    setConfigValue(ConfigKeys::COLOR_HIGHLIGHTED, m_colors[Color::HIGHLIGHTED]);
+    setConfigValue(ConfigKeys::COLOR_NODE, m_colors[Color::NODE]);
+    
+    // Save other settings
+    setConfigValue(ConfigKeys::LINK_WIDTH, QString::number(m_linkWidth));
+    setConfigValue(ConfigKeys::PAD_SIZE, QString::number(m_padSize));
 }
 
 void Config::readConfigFromBinary(QDataStream& in) {
